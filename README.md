@@ -4,4 +4,5 @@
 
 ## Progress :
 - assignment 1: 
-    - KNN classifier (knn.ipynb, k_nearest_neighbor.py Done)
+    - KNN classifier (knn.ipynb, k_nearest_neighbor.py) - Done
+    - SVM classifier (svm.ipynb, linear_svm.py, linear_classifier.py) - Done
