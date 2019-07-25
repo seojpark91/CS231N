@@ -31,17 +31,25 @@ def svm_loss_naive(W, X, y, reg):
     correct_class_score = scores[y[i]]
     for j in xrange(num_classes):
       if j == y[i]:
+        # skip for the true class to only loop over incorrect classes
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
+        dW[:, j] += X[i, :]
+        # for y==i, add negative gradient
+        dW[:, y[i]] -= X[i, :]
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
+  dW /= num_train
 
-  # Add regularization to the loss.
-  loss += reg * np.sum(W * W)
+  # Add regularization to the loss. 
+  # Multiply 0.5 so that gradients of the loss come out without any constant in front
+  loss += 0.5 * reg * np.sum(W * W)
+  # gradient of the above loss
+  dW += reg * W
 
   #############################################################################
   # TODO:                                                                     #
@@ -51,8 +59,6 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
-
-
   return loss, dW
 
 
@@ -64,17 +70,42 @@ def svm_loss_vectorized(W, X, y, reg):
   """
   loss = 0.0
   dW = np.zeros(W.shape) # initialize the gradient as zero
-
+  num_train = X.shape[0]
   #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W)
+
+  # select indexes to extract correct label scores
+  correct_label_scores_idxes = (range(scores.shape[0]), y)
+
+  # select correct label scores from scores matrix
+  correct_label_scores = scores[correct_label_scores_idxes]
+
+  # subtract correct label scores from scores matrix and add 1 for threshold
+  margins = scores - correct_label_scores.reshape(-1,1) + 1
+
+  # zero out correct label scores so that we can add losses
+  margins[correct_label_scores_idxes] = 0
+
+  # since SVM loss is a hinge loss, 0 out all margins that are less than 0 
+  idxes_to_zero_out = np.nonzero(margins < 0)
+  margins[idxes_to_zero_out] = 0
+
+  # sum over all dimensions to get loss
+  loss = np.sum(margins)
+
+  # divide by the number of training data
+  loss /= num_train
+
+  # Add regularization to the loss. 
+  # Multiply 0.5 so that gradients of the loss come out without any constant in front
+  loss += 0.5 * reg * np.sum(W * W)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
 
   #############################################################################
   # TODO:                                                                     #
@@ -85,7 +116,17 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  # as we already calculated margins less than 0, only change margins that are greater 
+  # than 0 to 1, which is number of classes - 1
+  margins[margins > 0] = 1
+  correct_label_gradient_dir = margins.sum(axis=1) * -1
+  margins[correct_label_scores_idxes] = correct_label_gradient_dir
+
+  dW = X.T.dot(margins)
+  dW /= num_train
+  
+  # add regularization to the gradient
+  dW += reg * W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
