@@ -94,7 +94,6 @@ class KNearestNeighbor(object):
     num_test = X.shape[0]
     num_train = self.X_train.shape[0] 
     dists = np.sqrt(np.sum(self.X_train**2, axis=1) + np.sum(X**2, axis=1)[:, np.newaxis] -2 * np.dot(X, self.X_train.T))
-
     return dists
 
   def predict_labels(self, dists, k=1):
@@ -112,7 +111,7 @@ class KNearestNeighbor(object):
     """
     num_test = dists.shape[0]
     y_pred = np.zeros(num_test)
-    for i in xrange(num_test)
+    for i in xrange(num_test):
       closest_y = []
       min_indices = np.argsort(dists[i])[:k]
 
